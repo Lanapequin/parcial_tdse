@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Services — Active/Passive Proxy</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #7c3aed;
+      --accent2: #06b6d4;
+      --green: #10b981;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --card: #13131f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .architecture {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+    }
+
+    .arch-node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      text-align: center;
+    }
+
+    .arch-node span {
+      display: block;
+      font-size: 0.6rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .arch-node.proxy-node { border-color: var(--accent); color: var(--accent); }
+    .arch-node.math-node  { border-color: var(--accent2); color: var(--accent2); }
+    .arch-arrow { color: var(--muted); font-size: 1.2rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: var(--accent); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .icon-sin  { background: rgba(124,58,237,0.15); }
+    .icon-cos  { background: rgba(6,182,212,0.15); }
+    .icon-pal  { background: rgba(16,185,129,0.15); }
+    .icon-mag  { background: rgba(245,158,11,0.15); }
+
+    .card-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .card-subtitle {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      padding: 0.6rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="number"]:focus { border-color: var(--accent); }
+
+    button.compute-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      padding: 0.6rem 1rem;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button.compute-btn:hover   { opacity: 0.85; }
+    button.compute-btn:active  { transform: scale(0.97); }
+    button.compute-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .result-box {
+      min-height: 60px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    .result-value { font-size: 1.3rem; font-weight: 700; color: var(--accent2); }
+    .result-meta  { color: var(--muted); font-size: 0.7rem; margin-top: 0.3rem; }
+    .result-error { color: var(--red); }
+    .result-loading { color: var(--muted); font-style: italic; }
+
+    .status-bar {
+      max-width: 1000px;
+      margin: 2rem auto 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .status-bar strong { color: var(--text); }
+
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot-red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⟨ Math Services ⟩</h1>
+  <p>Algoritmo Activo-Pasivo — Arquitectura de Microservicios en AWS</p>
+</header>
+
+<div class="architecture">
+  <div class="arch-node">Browser<span>Cliente HTML+JS</span></div>
+  <div class="arch-arrow">→</div>
+  <div class="arch-node proxy-node">Proxy EC2<span>Activo-Pasivo</span></div>
+  <div class="arch-arrow">→</div>
+  <div class="arch-node math-node">Math EC2 #1<span>Instancia Activa</span></div>
+  <div class="arch-arrow">/</div>
+  <div class="arch-node math-node">Math EC2 #2<span>Instancia Pasiva</span></div>
+</div>
+
+<div class="grid">
+
+  <!-- SENO -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-sin">📐</div>
+      <div>
+        <div class="card-title">sin(x)</div>
+        <div class="card-subtitle">Seno — valor en grados</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <input type="number" id="sin-input" value="30" placeholder="Grados" />
+      <button class="compute-btn" onclick="compute('sin', 'sin-input', 'sin-result')">Calcular</button>
+    </div>
+    <div class="result-box" id="sin-result">Ingresa un valor y presiona Calcular.</div>
+  </div>
+
+  <!-- COSENO -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-cos">📏</div>
+      <div>
+        <div class="card-title">cos(x)</div>
+        <div class="card-subtitle">Coseno — valor en grados</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <input type="number" id="cos-input" value="60" placeholder="Grados" />
+      <button class="compute-btn" onclick="compute('cos', 'cos-input', 'cos-result')">Calcular</button>
+    </div>
+    <div class="result-box" id="cos-result">Ingresa un valor y presiona Calcular.</div>
+  </div>
+
+  <!-- PALÍNDROMO -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-pal">🔁</div>
+      <div>
+        <div class="card-title">palindrome(n)</div>
+        <div class="card-subtitle">¿El número es palíndromo?</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <input type="number" id="pal-input" value="121" placeholder="Número entero" />
+      <button class="compute-btn" onclick="compute('palindrome', 'pal-input', 'pal-result')">Calcular</button>
+    </div>
+    <div class="result-box" id="pal-result">Ingresa un valor y presiona Calcular.</div>
+  </div>
+
+  <!-- MAGNITUD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-mag">📊</div>
+      <div>
+        <div class="card-title">magnitude(x)</div>
+        <div class="card-subtitle">Valor absoluto / magnitud</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <input type="number" id="mag-input" value="-42" placeholder="Número" />
+      <button class="compute-btn" onclick="compute('magnitude', 'mag-input', 'mag-result')">Calcular</button>
+    </div>
+    <div class="result-box" id="mag-result">Ingresa un valor y presiona Calcular.</div>
+  </div>
+
+</div>
+
+<div class="status-bar" id="status-bar">
+  <span class="dot dot-green"></span><strong>Proxy activo</strong> — cargando información de instancias...
+</div>
+
+<script>
+  /**
+   * Calls the proxy asynchronously using XMLHttpRequest (no libraries).
+   * The proxy applies the active-passive algorithm transparently.
+   */
+  function compute(func, inputId, resultId) {
+    var value = document.getElementById(inputId).value;
+    if (value === '' || value === null) {
+      document.getElementById(resultId).innerHTML =
+        '<span class="result-error">Por favor ingresa un valor.</span>';
+      return;
+    }
+
+    var resultBox = document.getElementById(resultId);
+    resultBox.innerHTML = '<span class="result-loading">⏳ Calculando...</span>';
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = function () {
+      if (this.status === 200) {
+        var data = JSON.parse(this.responseText);
+        if (data.error) {
+          resultBox.innerHTML =
+            '<span class="result-error">⚠️ Error: ' + data.error + '</span>';
+        } else {
+          var displayResult = data.result;
+          // Special display for palindrome
+          if (func === 'palindrome') {
+            displayResult = data.result === 1 ? '✅ Sí es palíndromo' : '❌ No es palíndromo';
+          } else {
+            displayResult = data.result.toFixed(6);
+          }
+          resultBox.innerHTML =
+            '<div class="result-value">' + displayResult + '</div>' +
+            '<div class="result-meta">f(' + data.input + ') → respondió: ' + data.instanceId + '</div>';
+        }
+      } else {
+        resultBox.innerHTML =
+          '<span class="result-error">⚠️ Error HTTP ' + this.status + '</span>';
+      }
+    };
+    xhttp.onerror = function () {
+      resultBox.innerHTML =
+        '<span class="result-error">⚠️ No se pudo conectar con el proxy.</span>';
+    };
+    xhttp.open('GET', '/proxy/' + func + '?value=' + value);
+    xhttp.send();
+  }
+
+  /**
+   * Loads proxy status on page load to show which instances are configured.
+   */
+  function loadStatus() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = function () {
+      if (this.status === 200) {
+        var data = JSON.parse(this.responseText);
+        document.getElementById('status-bar').innerHTML =
+          '<span class="dot dot-green"></span>' +
+          '<strong>Proxy activo</strong> &nbsp;|&nbsp; ' +
+          'Instancia 1 (activa): <strong>' + data.instance1 + '</strong> &nbsp;|&nbsp; ' +
+          'Instancia 2 (pasiva): <strong>' + data.instance2 + '</strong>';
+      }
+    };
+    xhttp.onerror = function () {
+      document.getElementById('status-bar').innerHTML =
+        '<span class="dot dot-red"></span>' +
+        '<strong>No se pudo conectar con el proxy</strong>';
+    };
+    xhttp.open('GET', '/proxy/status');
+    xhttp.send();
+  }
+
+  loadStatus();
+</script>
+</body>
+</html>
