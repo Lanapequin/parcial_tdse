@@ -79,7 +79,6 @@ nohup java -jar proxy-service-1.0.0.jar > proxy.log 2>&1 &
 ```
 http://35.173.200.237:8080/
 ```
-Finalmente, esto no se logro ya que la url se quedaba cargando asi las otras dos instancias estuvieran en UP pero el resto de lo solicitado se hizo
 
 ### Imagenes 
 
@@ -90,6 +89,8 @@ Finalmente, esto no se logro ya que la url se quedaba cargando asi las otras dos
 ![img3.png](images%2Fimg3.png)
 
 ![img4.png](images%2Fimg4.png)
+
+![img6.png](images%2Fimg6.png)
 
 ### Video
 
