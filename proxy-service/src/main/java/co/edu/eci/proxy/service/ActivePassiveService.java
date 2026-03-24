@@ -10,6 +10,7 @@ import java.net.URL;
 @Service
 public class ActivePassiveService {
 
+    // Read instance URLs from environment variables at startup
     private final String instance1Url;
     private final String instance2Url;
 
@@ -26,7 +27,6 @@ public class ActivePassiveService {
         try {
             return callInstance(instance1Url, path);
         } catch (Exception primaryFailed) {
-            // Active instance is down — delegate to the passive instance
             try {
                 return callInstance(instance2Url, path);
             } catch (Exception secondaryFailed) {
